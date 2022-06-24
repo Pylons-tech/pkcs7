@@ -137,7 +137,6 @@ func Parse(data []byte) (p7 *PKCS7, err error) {
 		return
 	}
 
-	// fmt.Printf("--> Content Type: %s", info.ContentType)
 	switch {
 	case info.ContentType.Equal(oidSignedData):
 		return parseSignedData(info.Content.Bytes)
@@ -154,7 +153,6 @@ func parseSignedData(data []byte) (*PKCS7, error) {
 	if err != nil {
 		return nil, err
 	}
-	// fmt.Printf("--> Signed Data Version %d\n", sd.Version)
 
 	var compound asn1.RawValue
 	var content unsignedData
@@ -227,7 +225,6 @@ func verifySignature(p7 *PKCS7, signer signerInfo) error {
 		return err
 	}
 	if len(signer.AuthenticatedAttributes) > 0 {
-		// TODO(fullsailor): First check the content type match
 		var digest []byte
 		err := unmarshalAttribute(signer.AuthenticatedAttributes, oidAttributeMessageDigest, &digest)
 		if err != nil {
@@ -242,8 +239,6 @@ func verifySignature(p7 *PKCS7, signer signerInfo) error {
 				ActualDigest:   computed,
 			}
 		}
-		// TODO(fullsailor): Optionally verify certificate chain
-		// TODO(fullsailor): Optionally verify signingTime against certificate NotAfter/NotBefore
 		signedData, err = marshalAttributes(signer.AuthenticatedAttributes)
 		if err != nil {
 			return err
@@ -301,8 +296,8 @@ func getHashForOID(oid asn1.ObjectIdentifier) (crypto.Hash, error) {
 	switch {
 	case oid.Equal(oidDigestAlgorithmSHA1):
 		return crypto.SHA1, nil
-  case oid.Equal(oidSHA256):
-    return crypto.SHA256, nil
+	case oid.Equal(oidSHA256):
+		return crypto.SHA256, nil
 	}
 	return crypto.Hash(0), ErrUnsupportedAlgorithm
 }
@@ -388,7 +383,7 @@ func (eci encryptedContentInfo) decrypt(key []byte) ([]byte, error) {
 		}
 		cyphertext = buf.Bytes()
 	} else {
-		// Simple case, the bytes _are_ the cyphertext
+		// Simple case, the bytes _are_ the cypher text
 		cyphertext = eci.EncryptedContent.Bytes
 	}
 
@@ -717,7 +712,7 @@ func signAttributes(attrs []attribute, pkey crypto.PrivateKey, hash crypto.Hash)
 	return nil, ErrUnsupportedAlgorithm
 }
 
-// concats and wraps the certificates in the RawValue structure
+// concatenate and wraps the certificates in the RawValue structure
 func marshalCertificates(certs []*x509.Certificate) rawCertificates {
 	var buf bytes.Buffer
 	for _, cert := range certs {
@@ -885,7 +880,6 @@ func encryptDESCBC(content []byte) ([]byte, *encryptedContentInfo, error) {
 //
 //     ContentEncryptionAlgorithm = EncryptionAlgorithmAES128GCM
 //
-// TODO(fullsailor): Add support for encrypting content with other algorithms
 func Encrypt(content []byte, recipients []*x509.Certificate) ([]byte, error) {
 	var eci *encryptedContentInfo
 	var key []byte
